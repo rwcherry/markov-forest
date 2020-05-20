@@ -5,6 +5,7 @@ import time
 import os
 import json
 import codecs
+import sys
 
 client = discord.Client()
 
@@ -21,14 +22,14 @@ async def on_message(message):
     if message.content.startswith('!markovme'):
         print("markoving ", message.author.id)
         await message.channel.send("Rob wrote this, yell at him. These are generated from the last 100,000 messages in whichever channel you sent this in ({})".format(message.channel.name))
-        if os.path.exists('lom_{}.msg'.format(message.channel.id)):
-            lom = codecs.open('lom_{}.msg'.format(message.channel.id), 'r', encoding="utf-8")
+        if os.path.exists('channel_messages_{}.msg'.format(message.channel.id)):
+            lom = codecs.open('channel_messages_{}.msg'.format(message.channel.id), 'r', encoding="utf-8")
             stuff = json.loads(lom.read())
             for thing in stuff:
                 if thing[0] == message.author.id:
                     m_text += thing[1] + "\n"
         else:        
-            lom = codecs.open('lom_{}.msg'.format(message.channel.id), 'w', encoding="utf-8")
+            lom = codecs.open('channel_messages_{}.msg'.format(message.channel.id), 'w', encoding="utf-8")
             lom.flush()
             messages = await message.channel.history(limit=100000).flatten()
             big_array = []
@@ -49,7 +50,14 @@ async def on_message(message):
         await message.channel.send("'{}' said, \"{}\"".format(message.author.nick, text_model.make_sentence(tries=100)))
 
 
-tfile = open('token', 'r')
-tok = tfile.read()
+tok = ""
+if os.path.exists('token'):
+    tfile = open('token', 'r')
+    tok = tfile.read()
+else:
+    tok = os.environ['DISCORD_TOKEN']
+
+if tok == "":
+    print("No token provided", file=sys.stderr)
 
 client.run(tok)
