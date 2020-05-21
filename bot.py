@@ -20,6 +20,19 @@ async def on_message(message):
 
     m_text = ""
     if message.content.startswith('!markovme'):
+        args = message.content.split(' ')
+        numSentences = 1
+        stateSize = 2
+        if len(args) > 1:
+            try:
+                numSentences = int(args[1])
+            except:
+                return
+        if len(args) > 2:
+            try:
+                stateSize = int(args[2])
+            except:
+                return
         print("markoving ", message.author.id)
         await message.channel.send("Rob wrote this, yell at him. These are generated from the last 100,000 messages in whichever channel you sent this in ({})".format(message.channel.name))
         if os.path.exists('channel_messages_{}.msg'.format(message.channel.id)):
@@ -45,9 +58,14 @@ async def on_message(message):
             lom.write(json.dumps(big_array))
             lom.flush()
             lom.close()
-        text_model = markovify.NewlineText(m_text)
+        text_model = markovify.NewlineText(m_text, state_size=stateSize)
 
-        await message.channel.send("'{}' said, \"{}\"".format(message.author.nick, text_model.make_sentence(tries=100)))
+        for i in range(numSentences):
+            said = text_model.make_sentence(tries=100)
+            if said is None:
+                await message.channel.send("Couldn't markov for ya with those arguments.")
+            else:
+                await message.channel.send("'{}' said, \"{}\"".format(message.author.nick, said))
 
 
 tok = ""
